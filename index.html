@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2F5BEA">
+    
+    <title>Class-Quiz Portal | Secure Assessment Terminal</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Environment & Error Shim -->
+    <script>
+      // Global Process Definition for Vite compatibility
+      // This allows the app to work even if environment variables aren't set in the dashboard immediately.
+      window.process = { 
+        env: { 
+          // Note: In production, assume keys are injected via VITE_ env vars.
+          // These serve as a fallback for the "Quick Demo" mode.
+          API_KEY: "AIzaSyDeGpobdHU7d6IVmbk1ZU8BaL4A-tIN37E", 
+          SUPABASE_URL: "https://wmcamjwlsfrmynsoseok.supabase.co", 
+          SUPABASE_ANON_KEY: "sb_publishable_u519tpbBa_uSuYk2VWPsiw_ha3Ar48c" 
+        } 
+      };
+      var process = window.process;
+      
+      // Advanced Global Error Handler
+      window.addEventListener('error', function(e) {
+        if (e.message && (e.message.includes('ResizeObserver') || e.message.includes('TensorFlow'))) return;
+        
+        console.error("Global Error Caught:", e);
+        
+        const root = document.getElementById('root');
+        // Only show full crash screen for critical errors, not script errors or TFLite noise
+        if (root && !root.innerHTML.includes('System Crash') && !e.message.includes('Script error')) {
+           // Optional: You can render a fallback UI here if needed
+        }
+      });
+
+      // --- LOG SUPPRESSION FIX ---
+      // Filter out TensorFlow Lite / MediaPipe INFO logs that look like errors
+      (function() {
+        const originalConsoleInfo = console.info;
+        const originalConsoleLog = console.log;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleError = console.error;
+
+        const shouldSuppress = (args) => {
+          if (args.length > 0) {
+              const msg = String(args[0]);
+              if (msg.includes('TensorFlow Lite') || 
+                  msg.includes('XNNPACK delegate') ||
+                  msg.includes('delegate for CPU') ||
+                  msg.includes('Mediapipe') ||
+                  msg.includes('WASM') ||
+                  msg.includes('created delegate')) {
+                  return true; 
+              }
+          }
+          return false;
+        };
+
+        console.info = function(...args) {
+          if (shouldSuppress(args)) return;
+          originalConsoleInfo.apply(console, args);
+        };
+
+        console.log = function(...args) {
+           if (shouldSuppress(args)) return;
+           originalConsoleLog.apply(console, args);
+        };
+
+        console.warn = function(...args) {
+           if (shouldSuppress(args)) return;
+           originalConsoleWarn.apply(console, args);
+        };
+
+        console.error = function(...args) {
+           if (shouldSuppress(args)) return;
+           originalConsoleError.apply(console, args);
+        };
+      })();
+      // ---------------------------
+    </script>
+
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+      
+      :root { 
+        --brand-primary: #2F5BEA; 
+        --brand-secondary: #020617;
+        --bg-alt: #F1F5F9; 
+        --border-default: #E2E8F0;
+        --text-dark: #020617;
+        --text-muted: #94A3B8;
+        --premium-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        --elite-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.15);
+      }
+      
+      body { 
+        font-family: 'Plus Jakarta Sans', sans-serif; 
+        background-color: var(--bg-alt); 
+        margin: 0; 
+        color: #0F172A;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        overflow: hidden !important;
+        scroll-behavior: smooth;
+        height: 100vh;
+      }
+
+      .elite-input { 
+        width: 100%; 
+        height: 52px; 
+        background: #FFFFFF !important; 
+        border: 1.5px solid var(--border-default) !important; 
+        border-radius: 14px; 
+        padding: 0 16px; 
+        outline: none; 
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--text-dark) !important;
+        display: block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      }
+      .elite-input:focus { border-color: var(--brand-primary) !important; box-shadow: 0 0 0 4px rgba(47, 91, 234, 0.1) !important; transform: translateY(-1px); }
+      .elite-input.error { border-color: #EF4444 !important; background-color: #FFF5F5 !important; }
+      .elite-input::placeholder { color: var(--text-muted); font-size: 14px; font-weight: 500; }
+      .no-select { -webkit-touch-callout: none; user-select: none; }
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+      
+      @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+      .animate-slide-up { animation: slideUp 0.7s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      .animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
+      .intro-gradient { background: linear-gradient(135deg, #020617 0%, #1e1b4b 100%); }
+      .float-box { animation: float 6s ease-in-out infinite; }
+      @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.93.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "jsqr": "https://esm.sh/jsqr@^1.4.0",
+    "@mediapipe/tasks-vision": "https://esm.sh/@mediapipe/tasks-vision@^0.10.32",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="antialiased">
+    <div id="root">
+        <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:#0f172a; color:white; font-family:sans-serif;">
+            <div style="text-align:center;">
+                <p style="font-size:12px; font-weight:bold; letter-spacing:0.2em; text-transform:uppercase; color:#6366f1; margin-bottom:10px;">Initializing Core...</p>
+                <div style="width: 40px; height: 40px; border: 4px solid #1e293b; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite; margin:0 auto;"></div>
+            </div>
+        </div>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    </div>
+    
+    <!-- Vite Entry Point -->
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

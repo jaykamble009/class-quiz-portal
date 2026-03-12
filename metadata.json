@@ -1,0 +1,8 @@
+{
+  "name": "Class-Quiz Portal - Professional Examination System",
+  "description": "A high-security AI-powered online examination system with real-time face monitoring, noise detection, and role-based access control.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

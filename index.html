@@ -19,11 +19,10 @@
       // This allows the app to work even if environment variables aren't set in the dashboard immediately.
       window.process = { 
         env: { 
-          // Note: In production, assume keys are injected via VITE_ env vars.
-          // These serve as a fallback for the "Quick Demo" mode.
-          API_KEY: "AIzaSyDeGpobdHU7d6IVmbk1ZU8BaL4A-tIN37E", 
-          SUPABASE_URL: "https://wmcamjwlsfrmynsoseok.supabase.co", 
-          SUPABASE_ANON_KEY: "sb_publishable_u519tpbBa_uSuYk2VWPsiw_ha3Ar48c" 
+          // Keys are injected via VITE_ env vars in production.
+          API_KEY: "", 
+          SUPABASE_URL: "", 
+          SUPABASE_ANON_KEY: "" 
         } 
       };
       var process = window.process;

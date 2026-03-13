@@ -18,11 +18,12 @@ if (rootElement) {
     );
     console.log("System Core Mounted Successfully");
   } catch (err) {
-    console.error("Critical Mount Error:", err);
+    const error = err as Error;
+    console.error("Critical Mount Error:", error);
     rootElement.innerHTML = `
       <div style="color:red; padding:20px; background:white; height:100vh;">
         <h1>Application Error</h1>
-        <pre>${err.message}\n${err.stack}</pre>
+        <pre>${error.message}\n${error.stack}</pre>
       </div>
     `;
   }

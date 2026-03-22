@@ -102,7 +102,7 @@ const ResultCard: React.FC<{ h: any, isLive?: boolean }> = ({ h, isLive }) => (
 );
 
 const StudentDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, forgotPassword } = useAuth();
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState<'home' | 'hub' | 'results' | 'history' | 'profile' | 'guardian'>('home');
@@ -113,6 +113,14 @@ const StudentDashboard: React.FC = () => {
   const [settings, setSettings] = useState<GlobalSystemState | null>(null);
   const [showCredits, setShowCredits] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+
+  // Allow perfect scrolling on this page
+  useEffect(() => {
+    document.body.style.setProperty('overflow', 'auto', 'important');
+    return () => {
+      document.body.style.setProperty('overflow', 'hidden', 'important');
+    };
+  }, []);
 
   // Real Data States
   const [exams, setExams] = useState<Exam[]>([]);
@@ -586,14 +594,14 @@ const StudentDashboard: React.FC = () => {
   if (activeExam) return <ExamInterface exam={activeExam} initialAttempt={activeAttempt} onComplete={() => { setActiveExam(null); setActiveAttempt(undefined); load(); setActiveTab('results'); }} />;
 
   return (
-    <div className="min-h-screen h-screen overflow-hidden bg-[#F8FAFC] flex flex-col font-['Plus_Jakarta_Sans'] relative">
+    <div className="h-screen w-screen overflow-hidden bg-[#F8FAFC] flex flex-col font-['Plus_Jakarta_Sans'] relative">
       <SystemStatusBanner />
       {showCredits && <DeveloperCreditPopup onClose={() => setShowCredits(false)} />}
       {showScanner && <QRScanner onScan={(d) => { setShowScanner(false); setExamJoinCode(d); handleJoinExamRequest(d); }} onClose={() => setShowScanner(false)} />}
 
-      <div className="flex-1 flex flex-col lg:flex-row relative">
+      <div className="flex-1 flex flex-col lg:flex-row relative h-full overflow-hidden">
 
-      <aside className="hidden lg:flex w-80 bg-white border-r-4 border-slate-100 h-screen sticky top-0 flex-col p-10 space-y-12 z-20">
+      <aside className="hidden lg:flex w-80 bg-white border-r-4 border-slate-100 flex-col p-10 space-y-12 z-20 overflow-y-auto custom-scrollbar">
         <div className="flex items-center gap-6"><Logo size="md" /><div className="leading-none"><h2 className="text-lg font-black tracking-tighter uppercase italic text-slate-900">Student</h2><p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Portal v1.2</p></div></div>
         <nav className="flex-1 space-y-5">
           <NavIcon icon="fa-house" label="Dashboard" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
@@ -608,7 +616,7 @@ const StudentDashboard: React.FC = () => {
         <button onClick={() => logout()} className="w-full py-5 bg-red-50 text-red-500 rounded-[2rem] font-black uppercase text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all">Log Out</button>
       </aside>
 
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 z-50 flex justify-between items-center shadow-2xl">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-2 sm:p-4 z-50 flex justify-around items-center shadow-2xl overflow-x-auto overflow-y-hidden custom-scrollbar">
         <NavIcon icon="fa-house" label="" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
         <NavIcon icon="fa-layer-group" label="" active={activeTab === 'hub'} onClick={() => setActiveTab('hub')} />
         <NavIcon icon="fa-chart-pie" label="" active={activeTab === 'results'} onClick={() => setActiveTab('results')} />
@@ -617,15 +625,15 @@ const StudentDashboard: React.FC = () => {
         {isSuperUser && <NavIcon icon="fa-shield-dog" label="" active={activeTab === 'guardian'} onClick={() => setActiveTab('guardian')} />}
       </div>
 
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto pb-32 lg:pb-12 max-w-7xl mx-auto w-full">
+      <main className="flex-1 overflow-y-auto p-4 md:p-12 pb-32 lg:pb-12 max-w-7xl mx-auto w-full mt-14 lg:mt-0 custom-scrollbar relative">
         {/* Header */}
-        <header className="flex justify-between items-end mb-12">
-          <div className="space-y-1">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-4 md:gap-0">
+          <div className="space-y-1 w-full md:w-auto">
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">{getGreeting()}</p>
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none">{profile?.name}</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none break-all sm:break-normal">{profile?.name}</h1>
           </div>
           {isSuperUser && (
-            <div className="px-6 py-2 bg-indigo-600 text-white rounded-xl shadow-lg border border-indigo-400 flex items-center gap-2">
+            <div className="px-6 py-2 bg-indigo-600 text-white rounded-xl shadow-lg border border-indigo-400 flex items-center gap-2 self-start md:self-auto">
               <i className="fa-solid fa-star text-xs animate-pulse"></i>
               <span className="text-[9px] font-black uppercase tracking-widest">Guardian Node</span>
             </div>
@@ -731,7 +739,14 @@ const StudentDashboard: React.FC = () => {
             </div>
             <div className="space-y-4">
               <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900 px-4">Account Actions</h3>
-              <button className="w-full p-6 bg-white rounded-[2.5rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-600/30 transition-all shadow-sm" onClick={() => alert("Password reset link sent.")}><div className="flex items-center gap-4"><div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><i className="fa-solid fa-key"></i></div><div className="text-left"><p className="font-black text-slate-900 text-sm">Change Password</p><p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Update your login password</p></div></div><i className="fa-solid fa-chevron-right text-slate-300"></i></button>
+              <button className="w-full p-6 bg-white rounded-[2.5rem] border border-slate-100 flex items-center justify-between group hover:border-indigo-600/30 transition-all shadow-sm" onClick={async () => {
+                  try {
+                      const res = await forgotPassword(profile?.email || '', profile?.rollNumber || '', '', profile?.academicYear);
+                      addToast(res.message || (res.success ? "Password reset link sent to your email." : "Failed to send link."), res.success ? "success" : "error");
+                  } catch (e) {
+                      addToast("Error requesting password reset.", "error");
+                  }
+              }}><div className="flex items-center gap-4"><div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><i className="fa-solid fa-key"></i></div><div className="text-left"><p className="font-black text-slate-900 text-sm">Change Password</p><p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Update your login password</p></div></div><i className="fa-solid fa-chevron-right text-slate-300"></i></button>
               <button className="w-full p-6 bg-white rounded-[2.5rem] border border-slate-100 flex items-center justify-between group hover:border-blue-600/30 transition-all shadow-sm" onClick={() => setShowCredits(true)}><div className="flex items-center gap-4"><div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors"><i className="fa-solid fa-code"></i></div><div className="text-left"><p className="font-black text-slate-900 text-sm">Developer Credits</p><p className="text-[9px] font-black uppercase tracking-widest text-slate-400">View Architects</p></div></div><i className="fa-solid fa-chevron-right text-slate-300"></i></button>
               <button className="w-full p-6 bg-red-50 rounded-[2.5rem] border border-red-100 flex items-center justify-between group hover:bg-red-600 hover:text-white transition-all shadow-sm mt-4" onClick={() => logout()}><div className="flex items-center gap-4"><div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 group-hover:bg-white/20 group-hover:text-white transition-colors"><i className="fa-solid fa-arrow-right-from-bracket"></i></div><div className="text-left"><p className="font-black text-sm">Logout</p><p className="text-[9px] font-black uppercase tracking-widest opacity-60">Sign out of account</p></div></div></button>
             </div>

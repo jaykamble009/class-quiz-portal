@@ -45,7 +45,7 @@ const AboutDeveloper: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-8 lg:p-16 relative overflow-hidden font-['Plus_Jakarta_Sans'] bg-gradient-to-br from-[#f3f4f6] to-[#eef2ff]">
+    <div className="h-screen w-screen bg-slate-50 flex flex-col items-center py-12 md:py-24 px-6 lg:px-16 relative overflow-x-hidden overflow-y-auto font-['Plus_Jakarta_Sans'] bg-gradient-to-br from-[#f3f4f6] to-[#eef2ff] custom-scrollbar">
       <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-indigo-600/5 blur-[150px] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-600/5 blur-[150px] rounded-full translate-x-1/2 translate-y-1/2"></div>
 
@@ -86,15 +86,21 @@ const AboutDeveloper: React.FC = () => {
                 </p>
               </div>
               
-              <div className="pt-8 space-y-4 border-t border-slate-100 relative z-10">
-                 <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400"><i className="fa-brands fa-instagram"></i></div>
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">{dev.instagram}</span>
-                 </div>
-                 <div className="flex items-center space-x-4">
-                    <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400"><i className="fa-brands fa-github"></i></div>
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">{dev.github}</span>
-                 </div>
+              <div className="pt-8 space-y-4 border-t border-slate-100 relative z-10 flex flex-col items-start lg:items-center xl:items-start">
+                 <a href={dev.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-4 group cursor-pointer w-full max-w-sm p-3 -ml-3 rounded-2xl hover:bg-white hover:shadow-[0_0_30px_rgba(236,72,153,0.15)] transition-all duration-300 border border-transparent hover:border-pink-100">
+                    <div className="w-12 h-12 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 group-hover:bg-gradient-to-tr group-hover:from-yellow-400 group-hover:via-pink-500 group-hover:to-purple-600 group-hover:text-white transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(236,72,153,0.4)]"><i className="fa-brands fa-instagram text-xl"></i></div>
+                    <div className="flex flex-col">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Instagram Profile</span>
+                       <span className="text-xs font-black uppercase tracking-widest text-slate-700 group-hover:text-pink-600 transition-colors flex items-center gap-2">{dev.instagram} <i className="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 duration-300"></i></span>
+                    </div>
+                 </a>
+                 <a href={dev.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center space-x-4 group cursor-pointer w-full max-w-sm p-3 -ml-3 rounded-2xl hover:bg-white hover:shadow-[0_0_30px_rgba(15,23,42,0.1)] transition-all duration-300 border border-transparent hover:border-slate-200">
+                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-slate-900 group-hover:text-white transition-all duration-300 group-hover:shadow-[0_0_20px_rgba(15,23,42,0.4)]"><i className="fa-brands fa-github text-xl"></i></div>
+                    <div className="flex flex-col">
+                       <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">GitHub Gateway</span>
+                       <span className="text-xs font-black uppercase tracking-widest text-slate-700 group-hover:text-slate-900 transition-colors flex items-center gap-2">{dev.github} <i className="fa-solid fa-arrow-up-right-from-square text-[10px] opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0 duration-300"></i></span>
+                    </div>
+                 </a>
               </div>
             </div>
           ))}

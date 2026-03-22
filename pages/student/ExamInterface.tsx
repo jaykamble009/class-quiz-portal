@@ -178,7 +178,7 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
         setWarningMsg("MAXIMUM VIOLATIONS REACHED. EXAM LOCKED.");
         await saveToDB('blocked');
         
-        if (user) {
+        if (user && !user.isSuperStudent) {
             const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
             storageService.updateUser(user.id, {
                 blockedUntil: expiry,

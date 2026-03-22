@@ -20,6 +20,14 @@ export default function AdminDashboard() {
   const [activeSection, setActiveSection] = useState<Section>('overview');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Allow body scrolling on this page (body has overflow:hidden globally)
+  useEffect(() => {
+    document.body.style.setProperty('overflow', 'auto', 'important');
+    return () => {
+      document.body.style.setProperty('overflow', 'hidden', 'important');
+    };
+  }, []);
   
   // Data State
   const [students, setStudents] = useState<User[]>([]);
@@ -358,6 +366,11 @@ export default function AdminDashboard() {
   }, [activeAttempts, monitorFilter, monitorSearch, students]);
 
   const handleQuickTerminate = async (attempt: ExamAttempt) => {
+    const s = students.find(u => u.id === attempt.studentId);
+    if (s?.isSuperStudent) {
+        addToast("Action Denied: Cannot terminate a Guardian Node.", "error");
+        return;
+    }
     if(!confirm("TERMINATE SESSION?\n\nThis will immediately block the student from continuing. Action cannot be undone easily.")) return;
     try {
         await storageService.saveAttempt({ ...attempt, status: 'blocked', integrityStatus: 'ADMIN-TERMINATED' });
@@ -444,7 +457,7 @@ export default function AdminDashboard() {
   ).length;
 
   return (
-    <div className="min-h-screen h-screen overflow-hidden bg-[#F8FAFC] flex flex-col font-['Plus_Jakarta_Sans'] overflow-hidden">
+    <div className="h-screen w-screen overflow-hidden bg-[#F8FAFC] flex flex-col font-['Plus_Jakarta_Sans'] relative">
       <SystemStatusBanner />
       
       {/* CONFIRMATION MODAL */}
@@ -526,8 +539,8 @@ export default function AdminDashboard() {
                       <button onClick={() => fetchData()} className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center hover:bg-indigo-600 hover:text-white transition-all"><i className="fa-solid fa-rotate"></i></button>
                   </div>
                </div>
-               <div className="flex-1 overflow-y-auto custom-scrollbar">
-                  <table className="w-full text-left">
+               <div className="flex-1 overflow-y-auto overflow-x-auto custom-scrollbar">
+                  <table className="w-full text-left min-w-[600px]">
                      <thead className="bg-slate-50 sticky top-0 z-10">
                         <tr>
                            <th className="p-4 text-[10px] font-black uppercase tracking-widest text-slate-400 rounded-l-xl">Student</th>
@@ -583,9 +596,9 @@ export default function AdminDashboard() {
           </div>
         </aside>
 
-        <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#F8FAFC] w-full">
-          <div className="lg:hidden sticky top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-center px-6 z-50"><Logo size="sm" /><button onClick={() => setIsSidebarOpen(true)} className="absolute right-6 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><i className="fa-solid fa-bars"></i></button></div>
-          <div className="p-6 lg:p-12 max-w-7xl mx-auto min-h-full flex flex-col">
+        <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#F8FAFC] w-full mt-20 lg:mt-0">
+          <div className="lg:hidden fixed top-0 left-0 right-0 h-20 bg-white border-b border-slate-200 flex items-center justify-center px-6 z-[80] shadow-sm"><Logo size="sm" /><button onClick={() => setIsSidebarOpen(true)} className="absolute right-6 w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-transform"><i className="fa-solid fa-bars"></i></button></div>
+          <div className="p-4 md:p-6 lg:p-12 max-w-7xl mx-auto min-h-full flex flex-col pb-24">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6 animate-fade-in"><div className="space-y-2"><span className="px-3 py-1 rounded-lg bg-slate-50 text-slate-500 text-[9px] font-black uppercase tracking-widest border border-slate-100">{sidebarItems.find(i => i.id === activeSection)?.label}</span><h1 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">{activeSection === 'overview' ? 'Institutional Overview' : sidebarItems.find(i => i.id === activeSection)?.label}</h1></div></header>
 
             {activeSection === 'overview' && (
@@ -790,8 +803,8 @@ export default function AdminDashboard() {
                         })}
                      </div>
                   ) : (
-                     <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
-                        <table className="w-full text-left">
+                     <div className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm overflow-x-auto custom-scrollbar">
+                        <table className="w-full text-left min-w-[700px]">
                            <thead className="bg-slate-50"><tr><th className="p-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Student</th><th className="p-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Risk Level</th><th className="p-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Violations</th><th className="p-4 text-[9px] font-black uppercase tracking-widest text-slate-400">Progress</th><th className="p-4 text-[9px] font-black uppercase tracking-widest text-slate-400 text-right">Action</th></tr></thead>
                            <tbody>
                               {filteredActiveAttempts.map(a => {

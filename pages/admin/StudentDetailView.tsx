@@ -120,6 +120,52 @@ const StudentDetailView: React.FC = () => {
     setIsEditing(false);
   };
 
+  const exportToCSV = () => {
+    if (!student || studentHistory.length === 0) {
+      addToast("No data to export.", "error");
+      return;
+    }
+
+    const headers = ['Date', 'Time', 'Exam Title', 'Subject', 'Score', 'Total Questions', 'Percentage', 'Violations Count', 'Status'];
+    
+    const rows = studentHistory.map(h => {
+      const date = new Date(h.timestamp).toLocaleDateString();
+      const time = new Date(h.timestamp).toLocaleTimeString();
+      const examTitle = h.exam?.title || 'System Assessment';
+      const subject = h.exam?.subject || 'N/A';
+      const score = h.score;
+      const total = h.totalQuestions;
+      const percentage = Math.round((score / total) * 100) + '%';
+      const violations = h.violations?.length || 0;
+      const status = (score / total) >= 0.4 ? 'Pass' : 'Fail';
+
+      return [
+        `"${date}"`,
+        `"${time}"`,
+        `"${examTitle}"`,
+        `"${subject}"`,
+        `"${score}"`,
+        `"${total}"`,
+        `"${percentage}"`,
+        `"${violations}"`,
+        `"${status}"`
+      ].join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${student.name.replace(/\s+/g, '_')}_Exam_History.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    addToast("Export complete.", "success");
+  };
+
   if (isLoading) return (
     <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
       <i className="fa-solid fa-circle-notch animate-spin text-4xl text-indigo-600"></i>
@@ -135,7 +181,7 @@ const StudentDetailView: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] font-['Plus_Jakarta_Sans'] flex flex-col">
+    <div className="h-[100dvh] bg-[#F8FAFC] font-['Plus_Jakarta_Sans'] flex flex-col w-full overflow-hidden">
       {/* Evidence Modal */}
       {viewProof && (
         <div className="fixed inset-0 z-[6000] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -166,32 +212,33 @@ const StudentDetailView: React.FC = () => {
         </div>
       )}
 
-      <nav className="bg-slate-950 text-white p-6 sticky top-0 z-50 shadow-2xl flex justify-between items-center">
-        <button onClick={() => navigate(-1)} className="flex items-center space-x-3 text-slate-400 hover:text-white transition-colors font-black uppercase text-[10px] tracking-widest">
+      <nav className="bg-slate-950 text-white p-4 sm:p-6 shadow-2xl flex justify-between items-center relative z-50 shrink-0">
+        <button onClick={() => navigate(-1)} className="flex items-center space-x-2 sm:space-x-3 text-slate-400 hover:text-white transition-colors font-black uppercase text-[10px] tracking-widest whitespace-nowrap">
           <i className="fa-solid fa-arrow-left"></i>
-          <span>Registry</span>
+          <span className="hidden sm:inline">Registry</span>
         </button>
-        <div className="text-center leading-none">
-          <h1 className="font-black text-xl tracking-tighter uppercase italic">Candidate Audit</h1>
-          <p className="text-[8px] text-blue-400 font-black uppercase tracking-[0.3em] mt-1">Institutional Terminal</p>
+        <div className="text-center leading-none flex-1 px-4">
+          <h1 className="font-black text-lg sm:text-xl tracking-tighter uppercase italic truncate">Candidate Audit</h1>
+          <p className="text-[8px] text-blue-400 font-black uppercase tracking-[0.3em] mt-1 truncate">Institutional Terminal</p>
         </div>
-        <div className="w-20"></div>
+        <div className="w-8 sm:w-20"></div>
       </nav>
 
-      <main className="max-w-7xl mx-auto p-6 md:p-12 grid grid-cols-1 lg:grid-cols-3 gap-10 w-full flex-1">
-        <aside className="lg:col-span-1 space-y-8">
-          <div className="bg-white p-10 rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-8 relative overflow-hidden group">
+      <div className="flex-1 w-full lg:overflow-hidden overflow-y-auto overflow-x-hidden custom-scrollbar relative">
+        <main className="max-w-7xl mx-auto p-4 sm:p-6 md:p-12 flex flex-col lg:flex-row gap-6 sm:gap-10 w-full lg:h-full">
+          <aside className="w-full lg:w-96 shrink-0 space-y-6 sm:space-y-8 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pr-4 pb-10 lg:pb-0">
+          <div className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3.5rem] border border-slate-100 shadow-sm flex flex-col items-center text-center space-y-6 sm:space-y-8 relative overflow-hidden group w-full">
             
             {/* Edit Toggle */}
             <button 
                 onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)} 
-                className="absolute top-8 right-8 w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-colors z-20 shadow-sm"
+                className="absolute top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 hover:bg-indigo-600 hover:text-white transition-colors z-20 shadow-sm"
                 title={isEditing ? "Cancel" : "Edit Profile"}
             >
                <i className={`fa-solid ${isEditing ? 'fa-xmark' : 'fa-pen'}`}></i>
             </button>
 
-            <div className="w-32 h-32 bg-indigo-600 text-white rounded-[2.5rem] flex items-center justify-center font-black text-5xl shadow-2xl shadow-indigo-100 relative z-10">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-indigo-600 text-white rounded-[2rem] sm:rounded-[2.5rem] flex items-center justify-center font-black text-4xl sm:text-5xl shadow-2xl shadow-indigo-100 relative z-10 shrink-0">
               {student.name[0]}
             </div>
 
@@ -236,9 +283,9 @@ const StudentDetailView: React.FC = () => {
                 </div>
             ) : (
                 <>
-                    <div className="space-y-2 relative z-10">
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tighter leading-none">{student.name}</h2>
-                        <p className="text-sm font-bold text-slate-400">{student.email}</p>
+                    <div className="space-y-2 relative z-10 w-full overflow-hidden">
+                        <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter leading-none break-words">{student.name}</h2>
+                        <p className="text-xs sm:text-sm font-bold text-slate-400 break-all">{student.email}</p>
                     </div>
                     <div className="w-full space-y-4 pt-8 border-t border-slate-50 relative z-10">
                         <div className="flex justify-between items-center px-4">
@@ -254,31 +301,41 @@ const StudentDetailView: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 text-center space-y-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Avg Score</p>
-                <p className="text-3xl font-black italic text-blue-600">{stats.avg}%</p>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+             <div className="bg-white p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 text-center space-y-2">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400">Avg Score</p>
+                <p className="text-2xl sm:text-3xl font-black italic text-blue-600">{stats.avg}%</p>
              </div>
-             <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 text-center space-y-2">
-                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Violations</p>
-                <p className="text-3xl font-black italic text-red-600">{stats.violations}</p>
+             <div className="bg-white p-4 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 text-center space-y-2">
+                <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400">Violations</p>
+                <p className="text-2xl sm:text-3xl font-black italic text-red-600">{stats.violations}</p>
              </div>
           </div>
         </aside>
 
-        <section className="lg:col-span-2 space-y-10">
+        <section className="flex-1 lg:h-full lg:overflow-y-auto custom-scrollbar lg:pr-4 space-y-10 pb-20">
            <div className="bg-white p-12 rounded-[4rem] border border-slate-100 shadow-sm">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-10 flex items-center gap-4">
-                <i className="fa-solid fa-clock-rotate-left text-indigo-600"></i>
-                <span>Session History</span>
-              </h3>
+              <div className="flex justify-between items-center mb-10">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-4">
+                  <i className="fa-solid fa-clock-rotate-left text-indigo-600"></i>
+                  <span>Session History</span>
+                </h3>
+                <button 
+                  onClick={exportToCSV} 
+                  className="flex items-center gap-3 px-4 py-3 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-600 hover:text-white transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest border border-emerald-100 shadow-sm active:scale-95"
+                  title="Download CSV"
+                >
+                  <i className="fa-solid fa-file-csv text-sm"></i>
+                  <span className="hidden sm:inline">Export CSV</span>
+                </button>
+              </div>
               
               <div className="space-y-8">
                 {studentHistory.map(h => (
                   <div key={h.id} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 group transition-all hover:border-indigo-100 hover:bg-white hover:shadow-lg">
-                    <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-4">
-                        <div className="flex-1">
-                            <h4 className="font-black text-xl text-slate-950">{h.exam?.title || 'System Assessment'}</h4>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-4">
+                        <div className="flex-1 w-full relative">
+                            <h4 className="font-black text-lg sm:text-xl text-slate-950 break-words leading-tight">{h.exam?.title || 'System Assessment'}</h4>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">
                               {new Date(h.timestamp).toLocaleDateString()} • {h.exam?.subject}
                             </p>
@@ -316,11 +373,11 @@ const StudentDetailView: React.FC = () => {
                                 <div className="flex items-center gap-3 mt-2 sm:mt-0">
                                   <span className="font-mono text-slate-500 font-bold">{new Date(v.timestamp).toLocaleTimeString()}</span>
                                   {v.snapshotHash ? (
-                                    <button onClick={() => setViewProof(v.snapshotHash!)} className="px-3 py-1 bg-slate-950 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-600 transition-colors">
+                                    <button onClick={() => setViewProof(v.snapshotHash!)} className="px-2 sm:px-3 py-1 bg-slate-950 text-white rounded-lg text-[9px] font-bold uppercase tracking-widest hover:bg-indigo-600 transition-colors whitespace-nowrap">
                                       View Hash
                                     </button>
                                   ) : (
-                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">No Media</span>
+                                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest whitespace-nowrap">No Media</span>
                                   )}
                                   {!v.reviewed && (
                                     <button onClick={() => acknowledgeViolation(h.id, v.timestamp)} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center hover:bg-emerald-500 hover:text-white transition-colors" title="Acknowledge">
@@ -349,7 +406,8 @@ const StudentDetailView: React.FC = () => {
               </div>
            </div>
         </section>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

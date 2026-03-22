@@ -180,7 +180,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (dbProfile.rollNumber !== rollNumber) return { success: false, message: 'Identity check failed: Roll Number mismatch.' };
       if (year && dbProfile.academicYear !== year) return { success: false, message: 'Identity check failed: Year mismatch.' };
       
-      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail);
+      const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+        redirectTo: window.location.origin.includes('localhost') 
+          ? `${window.location.origin}/#/reset-password` 
+          : `${window.location.origin}/#/reset-password`
+      });
       if (error) throw error;
       
       return { 

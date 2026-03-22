@@ -63,17 +63,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-6 font-['Plus_Jakarta_Sans'] relative py-12 md:py-20">
-      <div className="w-full fixed top-0 left-0 z-50">
+    <div className="h-[100dvh] overflow-hidden bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans'] relative">
+      <div className="w-full z-50 flex-none">
         <SystemStatusBanner />
       </div>
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#2F5BEA] via-indigo-500 to-purple-500"></div>
-      <div className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] bg-[#2F5BEA]/10 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
-      <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
-      <div className="w-full max-w-[480px] bg-white rounded-[3.5rem] p-6 md:p-8 shadow-[0_40px_80px_-20px_rgba(47,91,234,0.12)] border border-white/50 animate-in fade-in zoom-in duration-500 relative z-10 mt-12 mb-4">
+      <div className="flex-1 overflow-y-auto custom-scrollbar flex items-center justify-center p-4 md:p-8">
+        {/* Background Decor */}
+        <div className="fixed top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#2F5BEA] via-indigo-500 to-purple-500 z-50"></div>
+        <div className="fixed top-[-10%] right-[-5%] w-[700px] h-[700px] bg-[#2F5BEA]/10 rounded-full blur-[100px] pointer-events-none animate-pulse"></div>
+        <div className="fixed bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+
+        <div className="w-full max-w-[480px] bg-white rounded-[3.5rem] p-6 md:p-8 shadow-[0_40px_80px_-20px_rgba(47,91,234,0.12)] border border-white/50 animate-in fade-in zoom-in duration-500 relative z-10 my-auto">
         
         <div className="text-center mb-6 space-y-4">
           <Logo size="md" className="mx-auto" />
@@ -174,7 +175,9 @@ export default function LoginPage() {
              Register Now
            </button>
         </div>
+        </div>
       </div>
     </div>
   );
 }
+

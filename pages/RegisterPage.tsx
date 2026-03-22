@@ -77,14 +77,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 font-['Plus_Jakarta_Sans'] relative py-12 md:py-20 lg:py-24">
-      {/* System Banner */}
-      <div className="w-full fixed top-0 left-0 z-50">
+    <div className="h-[100dvh] overflow-hidden bg-slate-50 flex flex-col font-['Plus_Jakarta_Sans'] relative">
+      <div className="w-full z-50 flex-none text-center">
         <SystemStatusBanner />
       </div>
 
-      {/* Card — ultra compact to fit any screen */}
-      <div className="w-full max-w-[520px] bg-white rounded-[1.8rem] md:rounded-[3rem] px-5 py-5 md:p-12 shadow-2xl border-t-[5px] border-blue-600 mt-8">
+      <div className="flex-1 overflow-y-auto custom-scrollbar flex items-center justify-center p-4 md:p-8">
+        {/* Card — ultra compact to fit any screen */}
+        <div className="w-full max-w-[520px] bg-white rounded-[1.8rem] md:rounded-[3rem] px-5 py-5 md:p-12 shadow-2xl border-t-[5px] border-blue-600 my-auto">
 
         {/* Header */}
         <div className="text-center mb-4 md:mb-8 flex items-center gap-3 justify-center">
@@ -159,7 +159,9 @@ export default function RegisterPage() {
           </div>
 
         </form>
+        </div>
       </div>
     </div>
   );
 }
+

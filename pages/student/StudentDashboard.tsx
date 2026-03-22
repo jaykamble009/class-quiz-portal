@@ -112,11 +112,35 @@ const StudentDashboard: React.FC = () => {
   const [examJoinCode, setExamJoinCode] = useState('');
   const [settings, setSettings] = useState<GlobalSystemState | null>(null);
   const [showCredits, setShowCredits] = useState(false);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
+
 
   // Allow perfect scrolling on this page
   useEffect(() => {
     document.body.style.setProperty('overflow', 'auto', 'important');
+    
+    // Check for critical permissions proactively
+    const initPermissionCheck = async () => {
+      try {
+        if (navigator.permissions) {
+          const cam = await navigator.permissions.query({ name: 'camera' as any });
+          if (cam.state === 'prompt') {
+            setShowPermissionModal(true);
+          }
+          cam.onchange = () => {
+             if (cam.state === 'granted') setShowPermissionModal(false);
+          };
+        } else {
+          // Fallback for browsers that don't support permission query
+          setShowPermissionModal(true);
+        }
+      } catch (e) {
+        setShowPermissionModal(true);
+      }
+    };
+    initPermissionCheck();
+
     return () => {
       document.body.style.setProperty('overflow', 'hidden', 'important');
     };
@@ -598,6 +622,43 @@ const StudentDashboard: React.FC = () => {
       <SystemStatusBanner />
       {showCredits && <DeveloperCreditPopup onClose={() => setShowCredits(false)} />}
       {showScanner && <QRScanner onScan={(d) => { setShowScanner(false); setExamJoinCode(d); handleJoinExamRequest(d); }} onClose={() => setShowScanner(false)} />}
+
+      {showPermissionModal && (
+        <div className="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-2xl flex items-center justify-center p-6 text-center font-['Plus_Jakarta_Sans']">
+          <div className="max-w-md w-full bg-white rounded-[3rem] p-10 md:p-14 shadow-2xl space-y-8 animate-in zoom-in duration-500 border-b-[8px] border-indigo-600">
+            <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-[2.5rem] flex items-center justify-center mx-auto text-4xl shadow-inner border-2 border-indigo-100 relative">
+               <i className="fa-solid fa-shield-halved"></i>
+               <div className="absolute -top-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs animate-bounce">
+                 <i className="fa-solid fa-lock-open"></i>
+               </div>
+            </div>
+            <div className="space-y-4">
+              <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-tight">Terminal Activation</h2>
+              <p className="text-slate-500 font-medium leading-relaxed">To ensure a secure and proctored examination environment, this portal requires <span className="text-indigo-600 font-black">Camera Access</span>.</p>
+            </div>
+            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex items-start gap-4 text-left">
+               <i className="fa-solid fa-circle-info text-indigo-500 mt-1"></i>
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Permission will only be used for live proctoring during active exam sessions.</p>
+            </div>
+            <button 
+              onClick={async () => {
+                try {
+                  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                  stream.getTracks().forEach(t => t.stop());
+                  setShowPermissionModal(false);
+                  addToast("Biometric Node Activated.", "success");
+                } catch (e) {
+                  addToast("Permission Denied. Check settings.", "error");
+                }
+              }}
+              className="w-full py-6 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-slate-950 transition-all active:scale-95 flex items-center justify-center gap-3"
+            >
+              Enable Secure Node
+              <i className="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col lg:flex-row relative h-full overflow-hidden">
 

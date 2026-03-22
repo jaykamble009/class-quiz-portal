@@ -16,13 +16,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Allow body scrolling on this page (body has overflow:hidden globally)
-  useEffect(() => {
-    document.body.style.setProperty('overflow', 'auto', 'important');
-    return () => {
-      document.body.style.setProperty('overflow', 'hidden', 'important');
-    };
-  }, []);
+
 
   const [formData, setFormData] = useState({
     name: '', email: '', rollNumber: '', academicYear: '1st Year' as AcademicYear,

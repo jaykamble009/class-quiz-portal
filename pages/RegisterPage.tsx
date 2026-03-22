@@ -83,7 +83,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="h-screen bg-slate-50 flex items-center justify-center px-4 font-['Plus_Jakarta_Sans'] relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 font-['Plus_Jakarta_Sans'] relative py-12 md:py-20 lg:py-24">
       {/* System Banner */}
       <div className="w-full fixed top-0 left-0 z-50">
         <SystemStatusBanner />

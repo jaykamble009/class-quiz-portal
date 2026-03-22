@@ -63,7 +63,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen h-screen overflow-hidden bg-slate-50 flex items-center justify-center p-4 md:p-6 font-['Plus_Jakarta_Sans'] relative">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 md:p-6 font-['Plus_Jakarta_Sans'] relative py-12 md:py-20">
       <div className="w-full fixed top-0 left-0 z-50">
         <SystemStatusBanner />
       </div>

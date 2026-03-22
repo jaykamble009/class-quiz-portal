@@ -217,9 +217,42 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
 
     document.addEventListener('visibilitychange', onVisChange);
     window.addEventListener('blur', onBlur);
+
+    // Global Security Listeners
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isTerminatedRef.current || isSubmitted) return;
+
+      // Block F12, PrintScreen, and common shortcuts
+      const forbiddenKeys = ['F12', 'PrintScreen'];
+      if (forbiddenKeys.includes(e.key)) {
+        e.preventDefault();
+        handleViolation('sensor', `${e.key} Attempt Blocked`, 1.0);
+      }
+
+      // Block Ctrl+C, Ctrl+V, Ctrl+U, Ctrl+Shift+I, Ctrl+S, Ctrl+P
+      if (e.ctrlKey || e.metaKey) {
+        const char = e.key.toLowerCase();
+        if (['c', 'v', 'u', 's', 'p', 'i'].includes(char)) {
+          e.preventDefault();
+          handleViolation('sensor', `Shortcut (${e.key}) Blocked`, 1.0);
+        }
+      }
+    };
+
+    const onResize = () => {
+      if (!isTerminatedRef.current && !isSubmitted) {
+        handleViolation('sensor', 'Window Resize Detected (Potential Side-Tool)', 0.5);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onResize);
+
     return () => {
         document.removeEventListener('visibilitychange', onVisChange);
         window.removeEventListener('blur', onBlur);
+        window.removeEventListener('keydown', onKeyDown);
+        window.removeEventListener('resize', onResize);
     };
   }, [isReady, isSubmitted, handleViolation]);
 
@@ -398,7 +431,7 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
   return (
     <div 
       className="min-h-screen bg-white text-slate-950 flex flex-col no-select select-none relative font-['Plus_Jakarta_Sans'] overflow-hidden"
-      onContextMenu={(e) => { e.preventDefault(); if(!isTerminatedRef.current) handleViolation('sensor', 'Right Click Detected', 0.5); }}
+      onContextMenu={(e: React.MouseEvent) => { e.preventDefault(); if(!isTerminatedRef.current) handleViolation('sensor', 'Right Click Detected', 0.5); }}
       onCopy={preventCopyPaste} onCut={preventCopyPaste} onPaste={preventCopyPaste}
     >
       <ProctorNode onViolation={handleViolation} faceSensitivity={settings?.proctoringSensitivity || 5} />

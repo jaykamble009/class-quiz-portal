@@ -743,8 +743,8 @@ export default function AdminDashboard() {
                                  {/* Status Header */}
                                  <div className="flex justify-between items-start mb-6">
                                     <div className="flex items-center gap-3">
-                                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm ${statusBg} ${statusColor}`}>
-                                          {student?.name[0]}
+                                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 ${statusBg} ${statusColor} border border-current/10 shadow-sm`}>
+                                          {(student?.name?.[0] || 'S').toUpperCase()}
                                        </div>
                                        <div>
                                           <h4 className="font-bold text-slate-900 leading-tight">{student?.name || 'Loading...'}</h4>
@@ -811,8 +811,16 @@ export default function AdminDashboard() {
                                  const student = students.find(s => s.id === a.studentId);
                                  const isCritical = a.cheatScore > 2;
                                  return (
-                                    <tr key={a.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                       <td className="p-4 font-bold text-slate-900">{student?.name || 'Loading...'}</td>
+                                     <tr key={a.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                        <td className="p-4 flex items-center gap-3">
+                                           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 ${isCritical ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-indigo-50 text-indigo-600 border border-indigo-100'} shadow-sm`}>
+                                              {(student?.name?.[0] || 'S').toUpperCase()}
+                                           </div>
+                                           <div>
+                                              <p className="font-bold text-slate-900 leading-none">{student?.name || 'Loading...'}</p>
+                                              <p className="text-[8px] font-black uppercase text-slate-400 mt-1">{student?.rollNumber}</p>
+                                           </div>
+                                        </td>
                                        <td className="p-4">
                                           {isCritical ? 
                                             <span className="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">Critical</span> : 

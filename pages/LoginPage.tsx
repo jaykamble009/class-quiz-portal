@@ -87,14 +87,24 @@ export default function LoginPage() {
           <div className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-white rounded-[1.4rem] shadow-sm transition-all duration-300 ease-out ${role === 'admin' ? 'translate-x-[calc(100%+8px)]' : 'left-2'}`}></div>
           <button 
             type="button"
-            onClick={() => setRole('student')}
+            onClick={() => {
+              setRole('student');
+              setIdentifier('');
+              setPassword('');
+              setValidationErrors({});
+            }}
             className={`flex-1 relative z-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-colors ${role === 'student' ? 'text-[#2F5BEA]' : 'text-[#94A3B8] hover:text-[#64748B]'}`}
           >
             Student
           </button>
           <button 
             type="button"
-            onClick={() => setRole('admin')}
+            onClick={() => {
+              setRole('admin');
+              setIdentifier('');
+              setPassword('');
+              setValidationErrors({});
+            }}
             className={`flex-1 relative z-10 py-3.5 text-[10px] font-black uppercase tracking-widest transition-colors ${role === 'admin' ? 'text-[#2F5BEA]' : 'text-[#94A3B8] hover:text-[#64748B]'}`}
           >
             Teacher

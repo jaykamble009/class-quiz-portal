@@ -144,8 +144,8 @@ const ProtectedRoute = ({ children, role }: { children?: ReactNode; role?: 'stud
 };
 
 export default function App() {
-  const [showIntro, setShowIntro] = useState(() => !localStorage.getItem('portal_intro_complete'));
-  const finishIntro = () => { localStorage.setItem('portal_intro_complete', 'true'); setShowIntro(false); };
+  const [showIntro, setShowIntro] = useState(() => !sessionStorage.getItem('portal_intro_complete'));
+  const finishIntro = () => { sessionStorage.setItem('portal_intro_complete', 'true'); setShowIntro(false); };
 
   return (
     <ErrorBoundary>

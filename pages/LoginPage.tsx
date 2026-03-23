@@ -80,7 +80,11 @@ export default function LoginPage() {
           <Logo size="md" className="mx-auto" />
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">Class-Quiz Portal</h1>
-            <p className="text-[9px] text-[#64748B] font-black uppercase tracking-[0.4em] mt-1">Login to Continue</p>
+            <div className="flex justify-center gap-2 mt-2">
+              <span className="px-2.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[8px] font-black uppercase tracking-widest border border-indigo-100">Batch 2023-26</span>
+              <span className="px-2.5 py-0.5 bg-slate-50 text-slate-400 rounded-full text-[8px] font-black uppercase tracking-widest border border-slate-100">Active Node</span>
+            </div>
+            <p className="text-[9px] text-[#64748B] font-black uppercase tracking-[0.4em] mt-3">Login to Continue</p>
           </div>
         </div>
 

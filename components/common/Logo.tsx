@@ -3,7 +3,7 @@ import React from 'react';
 interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  variant?: 'light' | 'dark' | 'color';
+  variant?: 'light' | 'dark' | 'color' | 'glass';
 }
 
 const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', variant = 'color' }) => {
@@ -14,11 +14,14 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', variant = 'col
     xl: 'w-20 h-20'
   };
 
-  const colorMap = {
-    light: 'text-white',
-    dark: 'text-indigo-950',
-    color: 'text-indigo-600'
+  const themeMap = {
+    light: { bg: 'bg-white/10 border-white/20', icon: 'text-white' },
+    dark: { bg: 'bg-[#0f172a] border-slate-800', icon: 'text-indigo-400' },
+    color: { bg: 'bg-[#1e1b4b] border-indigo-900', icon: 'text-indigo-400' },
+    glass: { bg: 'bg-white/70 backdrop-blur-md border-white/50 shadow-xl', icon: 'text-indigo-600' }
   };
+
+  const currentTheme = themeMap[variant];
 
   return (
     <div className={`relative flex items-center justify-center ${sizeMap[size]} ${className}`}>
@@ -26,10 +29,10 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', variant = 'col
       <div className={`absolute inset-0 rounded-2xl opacity-20 blur-xl ${variant === 'light' ? 'bg-white' : 'bg-indigo-600'}`}></div>
       
       {/* Logo Container */}
-      <div className={`relative z-10 w-full h-full rounded-2xl flex items-center justify-center overflow-hidden border shadow-inner transition-transform duration-500 hover:rotate-3 ${variant === 'light' ? 'bg-white/10 border-white/20' : 'bg-[#1e1b4b] border-indigo-900'}`}>
+      <div className={`relative z-10 w-full h-full rounded-2xl flex items-center justify-center overflow-hidden border shadow-inner transition-transform duration-500 hover:rotate-3 ${currentTheme.bg}`}>
         <svg 
           viewBox="0 0 100 100" 
-          className={`w-3/5 h-3/5 fill-current ${colorMap[variant] === 'text-indigo-600' ? 'text-indigo-400' : colorMap[variant]}`}
+          className={`w-3/5 h-3/5 fill-current ${currentTheme.icon}`}
           xmlns="http://www.w3.org/2000/svg"
         >
           <path d="M50 5L15 25V75L50 95L85 75V25L50 5Z" fillOpacity="0.1" />

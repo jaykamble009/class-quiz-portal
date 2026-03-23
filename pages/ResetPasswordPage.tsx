@@ -60,7 +60,7 @@ export default function ResetPasswordPage() {
 
       <div className="w-full max-w-[480px] bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl border border-slate-100 animate-in zoom-in duration-500">
         <div className="text-center mb-10 space-y-6">
-          <Logo size="lg" className="mx-auto" />
+          <Logo size="lg" variant="glass" className="mx-auto" />
           <div>
             <h1 className="text-2xl font-black text-[#0F172A] tracking-tighter uppercase italic">Secure New Key</h1>
             <p className="text-[10px] text-[#64748B] font-black uppercase tracking-[0.4em] mt-2">Finalize Recovery</p>

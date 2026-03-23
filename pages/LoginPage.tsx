@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="w-full max-w-[480px] bg-white rounded-[3.5rem] p-6 md:p-8 shadow-[0_40px_80px_-20px_rgba(47,91,234,0.12)] border border-white/50 animate-in fade-in zoom-in duration-500 relative z-10 my-auto">
         
         <div className="text-center mb-6 space-y-4">
-          <Logo size="md" className="mx-auto" />
+          <Logo size="lg" variant="glass" className="mx-auto" />
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-[#0F172A] tracking-tighter uppercase italic">Class-Quiz Portal</h1>
             <div className="flex justify-center gap-2 mt-2">

@@ -82,7 +82,7 @@ const ForgotPasswordPage: React.FC = () => {
     <div className="min-h-screen bg-[#F1F5F9] flex items-center justify-center p-6 font-['Plus_Jakarta_Sans'] overflow-x-hidden">
       <div className="w-full max-w-[550px] bg-white rounded-[40px] p-10 md:p-14 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] border-2 border-white animate-in fade-in duration-700">
         <div className="text-center mb-12 space-y-6">
-          <Logo size="lg" className="mx-auto" />
+          <Logo size="lg" variant="glass" className="mx-auto" />
           <div className="space-y-1">
             <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Recover Identity</h1>
             <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.5em]">Institutional Audit Node</p>

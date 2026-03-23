@@ -707,7 +707,7 @@ const StudentDashboard: React.FC = () => {
       <div className="flex-1 flex flex-col lg:flex-row relative h-full overflow-hidden">
 
       <aside className="hidden lg:flex w-80 bg-white border-r-4 border-slate-100 flex-col p-10 space-y-12 z-20 overflow-y-auto custom-scrollbar">
-        <div className="flex items-center gap-6"><Logo size="md" /><div className="leading-none"><h2 className="text-lg font-black tracking-tighter uppercase italic text-slate-900">Student</h2><p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Portal v1.2</p></div></div>
+        <div className="flex items-center gap-6"><Logo size="md" variant="glass" /><div className="leading-none"><h2 className="text-lg font-black tracking-tighter uppercase italic text-slate-900">Student</h2><p className="text-[9px] font-black text-indigo-600 uppercase tracking-widest">Portal v1.2</p></div></div>
         <nav className="flex-1 space-y-5">
           <NavIcon icon="fa-house" label="Dashboard" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
           <NavIcon icon="fa-layer-group" label="Exam Hub" active={activeTab === 'hub'} onClick={() => setActiveTab('hub')} />

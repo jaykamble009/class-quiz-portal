@@ -88,7 +88,7 @@ export default function RegisterPage() {
 
         {/* Header */}
         <div className="text-center mb-4 md:mb-8 flex items-center gap-3 justify-center">
-          <Logo size="sm" className="shrink-0" />
+          <Logo size="sm" variant="glass" className="shrink-0" />
           <div className="text-left">
             <h1 className="text-lg md:text-3xl font-black text-slate-900 tracking-tighter uppercase italic leading-none">Registration</h1>
             <p className="text-[8px] text-slate-400 font-black uppercase tracking-[0.3em] mt-0.5">New Student Sign Up</p>

@@ -67,11 +67,11 @@ const ProctorNode = React.memo(({ onViolation, faceSensitivity }: ProctorNodePro
           if (results.faceLandmarks.length === 0) {
             missingFaceTimer.current += 100; // increment approx based on frame rate
 
-            // Tolerance: 10s
-            if (missingFaceTimer.current > 10000) {
+            // Tolerance: 3.5s (Hardened from 10s)
+            if (missingFaceTimer.current > 3500) {
               if (Date.now() > violationCooldown.current) {
-                onViolationRef.current('face-missing', 'Face not detected. Please ensure good lighting.', 1.0);
-                violationCooldown.current = Date.now() + 5000;
+                onViolationRef.current('face-missing', 'Face not detected. Stay in camera view.', 1.0);
+                violationCooldown.current = Date.now() + 4000;
               }
             }
           } else if (results.faceLandmarks.length > 1) {
@@ -102,12 +102,12 @@ const ProctorNode = React.memo(({ onViolation, faceSensitivity }: ProctorNodePro
 
             if (ratio < lowerLimit || ratio > upperLimit) {
               lookingAwayTimer.current += 100;
-              // Tolerance: 8s
-              if (lookingAwayTimer.current > 8000) {
+              // Tolerance: 3s (Hardened from 8s)
+              if (lookingAwayTimer.current > 3000) {
                 if (Date.now() > violationCooldown.current) {
                   const hash = await generateSnapshotHash(video);
-                  onViolationRef.current('looking-away', 'Please keep focus on the screen.', 0.8, hash);
-                  violationCooldown.current = Date.now() + 5000;
+                  onViolationRef.current('looking-away', 'Security Alert: Focused eye contact required.', 0.9, hash);
+                  violationCooldown.current = Date.now() + 4000;
                 }
               }
             } else {

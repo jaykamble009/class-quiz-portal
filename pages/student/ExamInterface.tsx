@@ -58,10 +58,36 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
       return diff > -5 ? diff : -999;
   });
 
+  // Tab Lock Security - Prevent 2 tabs for same exam
+  useEffect(() => {
+    const lockKey = `exam_lock_${exam.id}_${user?.id}`;
+    const currentLock = localStorage.getItem(lockKey);
+    const now = Date.now();
+    
+    // If lock exists and is recent (last 30s), block this tab
+    if (currentLock && (now - Number(currentLock)) < 30000) {
+        setWarningLevel('terminated');
+        setWarningMsg("SECURITY ALERT: Multi-Instance Session Detected. One exam per device/tab only.");
+        isTerminatedRef.current = true;
+        return;
+    }
+
+    // Set lock
+    localStorage.setItem(lockKey, now.toString());
+    const interval = setInterval(() => {
+        localStorage.setItem(lockKey, Date.now().toString());
+    }, 5000);
+
+    return () => {
+        clearInterval(interval);
+        localStorage.removeItem(lockKey);
+    };
+  }, [exam.id, user?.id]);
+
   // State
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isReady, setIsReady] = useState(!!initialAttempt);
+  const [isReady, setIsReady] = useState(true); // Streamlined: Start immediately
   const [settings, setSettings] = useState<GlobalSystemState | null>(null);
   
   const [warningLevel, setWarningLevel] = useState<'none' | 'soft' | 'hard' | 'terminated'>('none');
@@ -121,18 +147,34 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
     if (!user) return;
     
     let correctCount = 0;
+    let wrongCount = 0;
+    let notAnsweredCount = 0;
     const currentAnswers = answersRef.current;
+    
     if (safeExam.questions) {
         safeExam.questions.forEach(q => {
-          if (String(currentAnswers[q.id]) === String(q.correctAnswer)) correctCount++;
+          const ans = currentAnswers[q.id];
+          if (ans === undefined || ans === null || ans === '') {
+            notAnsweredCount++;
+          } else if (String(ans) === String(q.correctAnswer)) {
+            correctCount++;
+          } else {
+            wrongCount++;
+          }
         });
+    }
+
+    // Negative Marking Logic (-0.25 per wrong answer if enabled)
+    let finalScore = correctCount;
+    if (safeExam.settings?.negativeMarking && wrongCount > 0) {
+        finalScore = Math.max(0, correctCount - (wrongCount * 0.25));
     }
 
     const attempt: ExamAttempt = {
       id: attemptIdRef.current,
       examId: safeExam.id,
       studentId: user.id,
-      score: correctCount,
+      score: finalScore,
       totalQuestions: safeExam.questions ? safeExam.questions.length : 0,
       status,
       timestamp: initialAttempt?.timestamp || new Date().toISOString(),
@@ -143,6 +185,8 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
       violations: violationsRef.current,
       answersMap: currentAnswers,
       correctCount,
+      wrongCount,
+      notAnsweredCount,
       currentQuestionIndex: currentIdxRef.current // Persist progress
     };
     await storageService.saveAttempt(attempt);
@@ -248,11 +292,25 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('resize', onResize);
 
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('resize', onResize);
+
+    // Periodic Fullscreen Check (Hardness Enforcement)
+    const fsInterval = setInterval(() => {
+      if (!isTerminatedRef.current && !isSubmitted) {
+        if (!document.fullscreenElement) {
+          handleViolation('fullscreen-exit', 'Fullscreen Mode Required. Re-entering...', 1.0);
+          enterLockdown();
+        }
+      }
+    }, 3000);
+
     return () => {
         document.removeEventListener('visibilitychange', onVisChange);
         window.removeEventListener('blur', onBlur);
         window.removeEventListener('keydown', onKeyDown);
         window.removeEventListener('resize', onResize);
+        clearInterval(fsInterval);
     };
   }, [isReady, isSubmitted, handleViolation]);
 
@@ -342,18 +400,7 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
       }
   };
 
-  if (!isReady) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-white text-center font-['Plus_Jakarta_Sans']">
-        <div className="max-w-xl w-full bg-[#020617] p-12 rounded-[3rem] border-2 border-slate-800 space-y-8 animate-in zoom-in duration-500 shadow-2xl">
-           <Logo size="lg" variant="light" className="mx-auto" />
-           <div className="space-y-2"><h2 className="text-3xl font-black italic uppercase tracking-tighter">Security Check</h2><p className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">Face Verification Phase</p></div>
-           <div className="bg-white/5 p-6 rounded-2xl border border-white/10 text-xs leading-relaxed text-slate-400 text-left space-y-2"><p>1. <strong className="text-white">One Face Only:</strong> Ensure you are alone.</p><p>2. <strong className="text-white">Lighting:</strong> Face must be clearly visible.</p><p>3. <strong className="text-white">Privacy:</strong> No images are sent to the cloud. Analysis is local.</p></div>
-           <button onClick={enterLockdown} className="w-full h-20 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] shadow-2xl hover:bg-white hover:text-indigo-600 transition-all text-xs">Initialize Secure Exam</button>
-        </div>
-      </div>
-    );
-  }
+  // Note: Security check screen removed for better user experience (streamlined jump to questions)
 
   if (showResult) {
     const { correct, wrong, skipped } = calculateResultStats();
@@ -431,8 +478,10 @@ const ExamInterface: React.FC<ExamInterfaceProps> = ({ exam, initialAttempt, onC
   return (
     <div 
       className="min-h-screen bg-white text-slate-950 flex flex-col no-select select-none relative font-['Plus_Jakarta_Sans'] overflow-hidden"
-      onContextMenu={(e: React.MouseEvent) => { e.preventDefault(); if(!isTerminatedRef.current) handleViolation('sensor', 'Right Click Detected', 0.5); }}
+      onContextMenu={(e: React.MouseEvent) => { e.preventDefault(); if(!isTerminatedRef.current) handleViolation('sensor', 'Security Breach: Right Click Protocol Blocked', 0.5); }}
       onCopy={preventCopyPaste} onCut={preventCopyPaste} onPaste={preventCopyPaste}
+      onDragStart={(e) => e.preventDefault()}
+      onDrop={(e) => e.preventDefault()}
     >
       <ProctorNode onViolation={handleViolation} faceSensitivity={settings?.proctoringSensitivity || 5} />
       

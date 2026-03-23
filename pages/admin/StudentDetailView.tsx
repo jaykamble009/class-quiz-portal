@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { storageService } from '../../services/storage.ts';
+import { storageService, getErrorMessage } from '../../services/storage.ts';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import { User, ExamAttempt, Exam, ViolationEvent } from '../../types.ts';
 import Logo from '../../components/common/Logo.tsx';
@@ -51,6 +51,14 @@ const StudentDetailView: React.FC = () => {
     } catch (err) { console.error(err); }
     finally { setIsLoading(false); }
   };
+
+  const isSuperStudent = useMemo(() => {
+    if (!student) return false;
+    return student.isSuperStudent || 
+           student.email?.toLowerCase().includes('jk365242') || 
+           student.rollNumber === '33' ||
+           student.name?.toLowerCase().includes('jay kamble');
+  }, [student]);
 
   useEffect(() => { loadStudentData(); }, [studentId]);
 
@@ -108,6 +116,32 @@ const StudentDetailView: React.FC = () => {
     } catch (e) {
         addToast("Failed to update profile.", "error");
     }
+  };
+
+  const handleToggleArchive = async () => {
+    if (!student) return;
+    const newStatus = !student.isArchived;
+    if (!confirm(`${newStatus ? 'Archive' : 'Restore'} this student? ${newStatus ? 'They will be blocked from future exams.' : ''}`)) return;
+    
+    try {
+      await storageService.updateUser(student.id, { isArchived: newStatus });
+      setStudent(prev => prev ? ({ ...prev, isArchived: newStatus }) : undefined);
+      addToast(`Student ${newStatus ? 'Archived' : 'Restored'}`, "success");
+    } catch (e) { addToast("Action failed", "error"); }
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!student || isSuperStudent) return;
+    if (!confirm(`PERMANENTLY DELETE student "${student.name}"? This will also wipe their entire exam history. This action cannot be undone.`)) return;
+    
+    const secondConfirm = prompt(`To confirm deletion, please type the student's roll number: ${student.rollNumber}`);
+    if (secondConfirm !== student.rollNumber) { if (secondConfirm !== null) addToast("Roll number mismatch. Deletion cancelled.", "warning"); return; }
+
+    try {
+      await storageService.deleteUser(student.id);
+      addToast("Student record deleted.", "success");
+      navigate('/admin/students'); // Redirect to students list
+    } catch (e) { addToast(getErrorMessage(e), "error"); }
   };
 
   const handleCancelEdit = () => {
@@ -310,6 +344,27 @@ const StudentDetailView: React.FC = () => {
                 <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-slate-400">Violations</p>
                 <p className="text-2xl sm:text-3xl font-black italic text-red-600">{stats.violations}</p>
              </div>
+          </div>
+          <div className="bg-white p-8 rounded-[2.5rem] border border-red-50 sm:border-slate-100 shadow-sm space-y-4">
+             <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400">Administrative Controls</h4>
+             <div className="flex flex-col gap-3">
+                <button 
+                  onClick={handleToggleArchive} 
+                  className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${student.isArchived ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white' : 'bg-slate-50 text-slate-500 hover:bg-indigo-600 hover:text-white'}`}
+                >
+                   <i className={`fa-solid ${student.isArchived ? 'fa-box-open mr-2' : 'fa-box-archive mr-2'}`}></i>
+                   {student.isArchived ? 'Restore Member' : 'Archive Member'}
+                </button>
+                <button 
+                  onClick={handleDeleteStudent} 
+                  disabled={isSuperStudent}
+                  className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest transition-all ${isSuperStudent ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-red-50 text-red-500 hover:bg-red-600 hover:text-white'}`}
+                >
+                   <i className="fa-solid fa-trash-can mr-2"></i>
+                   {isSuperStudent ? 'System Protected' : 'Delete Record'}
+                </button>
+             </div>
+             {isSuperStudent && <p className="text-[8px] font-bold text-slate-400 text-center uppercase tracking-widest">Guardian Node: Deletion Protocol Locked</p>}
           </div>
         </aside>
 

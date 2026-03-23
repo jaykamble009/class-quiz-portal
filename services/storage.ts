@@ -210,13 +210,48 @@ export const storageService = {
     } catch (err) { throw err; }
   },
 
-  async getExams(includeArchived = false): Promise<Exam[]> {
+  async deleteUser(id: string) {
+    if (!supabase) throw new Error("Database disconnected.");
+    try {
+      // 1. Security Check: Block deletion of Super Students (Guardian Nodes)
+      const { data: user, error: fetchError } = await supabase.from('users').select('is_super_student, email, roll_number, name').eq('id', id).maybeSingle();
+      if (fetchError) throw fetchError;
+      
+      if (user && (user.is_super_student || user.email?.toLowerCase().includes('jk365242') || user.roll_number === '33' || user.name?.toLowerCase().includes('jay kamble'))) {
+        throw new Error("Guardian Protocol Violation: This node has immunity and cannot be deleted.");
+      }
+
+      // 2. Wipe Associated Data (Attempts)
+      await supabase.from('attempts').delete().eq('student_id', id);
+
+      // 3. Delete Profile
+      const { error } = await supabase.from('users').delete().eq('id', id);
+      if (error) throw error;
+    } catch (err) { 
+      console.error("Delete user failed:", err);
+      throw err; 
+    }
+  },
+
+  async getExams(includeArchived = false, subject?: string, id?: string, academicYear?: AcademicYear): Promise<Exam[]> {
     if (!supabase) return [];
     try {
       let query = supabase!.from('exams').select('*').order('created_at', { ascending: false });
 
       if (!includeArchived) {
         query = query.neq('status', 'archived');
+      }
+      
+      if (subject) {
+        query = query.eq('subject', subject);
+      }
+
+      if (id) {
+        query = query.eq('id', id);
+      }
+
+      if (academicYear) {
+        query = query.eq('academic_year', academicYear);
       }
 
       const { data, error } = await withRetry(() => query);
@@ -303,18 +338,49 @@ export const storageService = {
 
   async deleteAllExams() {
     if (!supabase) throw new Error("Database disconnected.");
-
+    
     // 1. Wipe attempts
     const { error: attError } = await supabase.from('attempts').delete().neq('id', '000000');
     if (attError) console.warn("Batch attempts delete warning:", attError.message);
 
     // 2. Wipe exams
     const { error: examError } = await supabase.from('exams').delete().neq('id', '000000');
+    if (examError) throw examError;
+  },
 
-    if (examError) {
-      console.warn("Batch hard delete failed. Falling back to Archive All.");
-      // Fallback: Archive all
-      await supabase.from('exams').update({ status: 'archived' }).neq('id', '000000');
+  async deleteArchivedExams() {
+    if (!supabase) throw new Error("Database disconnected.");
+
+    try {
+      // 1. Get IDs of archived exams
+      const { data: archivedExams, error: fetchError } = await supabase
+        .from('exams')
+        .select('id')
+        .eq('status', 'archived');
+      
+      if (fetchError) throw fetchError;
+      if (!archivedExams || archivedExams.length === 0) return;
+
+      const archivedIds = archivedExams.map(e => e.id);
+
+      // 2. Delete attempts for these exams
+      const { error: attError } = await supabase
+        .from('attempts')
+        .delete()
+        .in('exam_id', archivedIds);
+      
+      if (attError) console.warn("Archived attempts delete warning:", attError.message);
+
+      // 3. Delete the exams themselves
+      const { error: examError } = await supabase
+        .from('exams')
+        .delete()
+        .in('id', archivedIds);
+      
+      if (examError) throw examError;
+    } catch (err) {
+      console.error("Delete archived exams failed:", err);
+      throw err;
     }
   },
 
@@ -330,10 +396,17 @@ export const storageService = {
     if (uError) console.warn("Violation reset warning:", uError.message);
   },
 
-  async getAttempts(): Promise<ExamAttempt[]> {
+  async getAttempts(activeOnly = false, studentId?: string): Promise<ExamAttempt[]> {
     if (!supabase) return [];
     try {
-      const { data, error } = await withRetry(() => supabase!.from('attempts').select('*').order('timestamp', { ascending: false }));
+      let query = supabase!.from('attempts').select('*').order('timestamp', { ascending: false });
+      if (activeOnly) {
+        query = query.eq('status', 'in_progress');
+      }
+      if (studentId) {
+        query = query.eq('student_id', studentId);
+      }
+      const { data, error } = await withRetry(() => query);
       if (error) return [];
       return (data || []).map((a: any) => ({
         id: a.id, examId: a.exam_id, studentId: a.student_id, score: a.score, totalQuestions: a.total_questions,
@@ -357,7 +430,10 @@ export const storageService = {
         not_answered_count: attempt.notAnsweredCount, current_question_index: attempt.currentQuestionIndex
       };
       await withRetry(() => supabase!.from('attempts').upsert(payload));
-    } catch (err) { /* silent fail */ }
+    } catch (err) { 
+      console.error("Save attempt failed:", err);
+      throw err; // Don't silent fail, so UI can handle it
+    }
   },
 
   async getStudentAttempts(studentId: string): Promise<ExamAttempt[]> {

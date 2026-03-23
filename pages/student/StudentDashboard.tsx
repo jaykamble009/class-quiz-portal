@@ -53,7 +53,15 @@ const InstructionsModal: React.FC<{ exam: Exam, onClose: () => void, onStart: ()
           <button onClick={onClose} className="flex-1 py-5 bg-white border-2 border-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50">
             Cancel
           </button>
-          <button onClick={onStart} className="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">
+          <button 
+            onClick={() => {
+              if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+              }
+              onStart();
+            }} 
+            className="flex-[2] py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl hover:bg-indigo-700 active:scale-95 transition-all"
+          >
             Start Exam
           </button>
         </div>
@@ -178,9 +186,9 @@ const StudentDashboard: React.FC = () => {
     const safetyTimer = setTimeout(() => setIsLoading(false), 5000);
 
     try {
-      const [allEx, allAtt, allUsr, sysSettings, sysNotices, freshUserData] = await Promise.all([
-        storageService.getExams(),
-        storageService.getAttempts(),
+      const [allEx, myAtt, allUsr, sysSettings, sysNotices, freshUserData] = await Promise.all([
+        storageService.getExams(false, undefined, undefined, user.academicYear), // Filter by year
+        storageService.getAttempts(false, user.id), // Filter by studentId
         storageService.getUsers(),
         storageService.getSettings(),
         storageService.getNotices(),
@@ -188,8 +196,8 @@ const StudentDashboard: React.FC = () => {
       ]);
 
       setExams(allEx || []);
-      setGlobalAttempts(allAtt || []); // Save all for leaderboard
-      setAttempts((allAtt || []).filter(a => a.studentId === user.id)); // Personal attempts
+      setGlobalAttempts([]); // No longer needed for student to see everyone's attempts for performance
+      setAttempts(myAtt || []);
       setAllUsers(allUsr || []);
       setSettings(sysSettings || storageService.getDefaultSettings());
       setNotices(sysNotices || []);
@@ -197,7 +205,7 @@ const StudentDashboard: React.FC = () => {
       if (freshUserData) {
         setProfile(freshUserData);
       } else {
-        const found = (allUsr || []).find(u => u.id === user.id);
+        const found = (allUsr || []).find((u: User) => u.id === user.id);
         setProfile(found || user);
       }
 
@@ -467,7 +475,8 @@ const StudentDashboard: React.FC = () => {
   }, [notices, profile]);
 
   const handleJoinExamRequest = async (code?: string) => {
-    if (profile?.isArchived) { addToast("Archive Profile: Assessments locked.", "error"); return; }
+    try {
+      if (profile?.isArchived) { addToast("Archive Profile: Assessments locked.", "error"); return; }
 
     // Strict Global Block Check - IMMUNITY CHECK
     if ((profile?.blockedUntil && new Date(profile.blockedUntil) > new Date()) && !isSuperUser) {
@@ -475,16 +484,24 @@ const StudentDashboard: React.FC = () => {
       return;
     }
 
-    const targetCode = (code || examJoinCode).trim().toUpperCase();
+    let targetCode = (code || examJoinCode).trim().toUpperCase();
     if (!targetCode) { addToast("Please enter a valid Exam ID.", "warning"); return; }
+
+    // Auto-fix missing 'EX-' prefix for user convenience
+    if (!targetCode.startsWith('EX-') && targetCode.length <= 8) {
+       targetCode = 'EX-' + targetCode;
+    }
 
     let exam = exams.find(e => e.id === targetCode);
     if (!exam) {
       try {
-        const freshExams = await storageService.getExams();
-        setExams(freshExams);
-        exam = freshExams.find(e => e.id === targetCode);
-      } catch (err) { console.debug("Failed to re-fetch exams"); }
+        // Optimization: Only fetch the specific exam by ID
+        const matchedExams = await storageService.getExams(false, undefined, targetCode);
+        if (matchedExams.length > 0) {
+           exam = matchedExams[0];
+           setExams(prev => [...prev, exam!]); // Cache it
+        }
+      } catch (err) { console.debug("Failed to re-fetch exam"); }
     }
 
     if (!exam) { addToast(`Node identification failed. ID '${targetCode}' not found.`, "error"); return; }
@@ -497,14 +514,29 @@ const StudentDashboard: React.FC = () => {
 
     if (exam.status === 'closed') { addToast("This exam has been closed by the administrator.", "error"); return; }
 
-    // 1. Global Expiry Check
-    if (exam.expiresAt && new Date(exam.expiresAt) < new Date()) {
-      addToast("This exam is no longer available (Expired).", "error");
-      return;
+    // 1. Global Expiry Check with 1-hour Grace Period
+    if (exam.expiresAt) {
+      const expiryDate = new Date(exam.expiresAt);
+      const now = new Date();
+      const gracePeriodMs = 12 * 60 * 60 * 1000; // 12 hours grace for max reliability
+      
+      if (expiryDate.getTime() + gracePeriodMs < now.getTime()) {
+        const diagnosticMsg = `[Portal] EXAM EXPIRED! 
+          Exam ID: ${exam.id}
+          Expiry (UTC): ${expiryDate.toISOString()}
+          Local Time (UTC): ${now.toISOString()}
+          Difference: ${Math.floor((now.getTime() - expiryDate.getTime()) / 60000)} mins
+          Grace Period: 60 mins`;
+        
+        console.error(diagnosticMsg);
+        addToast("This exam is no longer available (Expired).", "error");
+        return;
+      }
     }
 
-    const freshAttempts = await storageService.getAttempts();
-    setAttempts(freshAttempts.filter(a => a.studentId === user?.id));
+    if (!user?.id) return;
+    const freshAttempts = await storageService.getStudentAttempts(user.id);
+    setAttempts(freshAttempts);
 
     const existingAttempt = freshAttempts.find(a => a.examId === exam!.id && a.studentId === user?.id);
 
@@ -539,7 +571,11 @@ const StudentDashboard: React.FC = () => {
       }
     }
 
-    setSelectedExamForInstructions(exam);
+      setSelectedExamForInstructions(exam);
+    } catch (err) {
+      console.error("Join Exam Error:", err);
+      addToast(getErrorMessage(err), "error");
+    }
   };
 
   const startExam = (exam: Exam) => {
@@ -622,6 +658,14 @@ const StudentDashboard: React.FC = () => {
       <SystemStatusBanner />
       {showCredits && <DeveloperCreditPopup onClose={() => setShowCredits(false)} />}
       {showScanner && <QRScanner onScan={(d) => { setShowScanner(false); setExamJoinCode(d); handleJoinExamRequest(d); }} onClose={() => setShowScanner(false)} />}
+      
+      {selectedExamForInstructions && (
+        <InstructionsModal 
+          exam={selectedExamForInstructions} 
+          onClose={() => setSelectedExamForInstructions(null)}
+          onStart={() => startExam(selectedExamForInstructions)}
+        />
+      )}
 
       {showPermissionModal && (
         <div className="fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-2xl flex items-center justify-center p-6 text-center font-['Plus_Jakarta_Sans']">
@@ -698,12 +742,20 @@ const StudentDashboard: React.FC = () => {
                <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter italic uppercase leading-none break-all sm:break-normal">{profile?.name}</h1>
             </div>
           </div>
-          {isSuperUser && (
-            <div className="px-6 py-2 bg-indigo-600 text-white rounded-xl shadow-lg border border-indigo-400 flex items-center gap-2 self-start md:self-auto">
-              <i className="fa-solid fa-star text-xs animate-pulse"></i>
-              <span className="text-[9px] font-black uppercase tracking-widest">Guardian Node</span>
-            </div>
-          )}
+          <div className="flex flex-col md:flex-row gap-3">
+            {isSuperUser && (
+              <div className="px-6 py-2 bg-indigo-600 text-white rounded-xl shadow-lg border border-indigo-400 flex items-center gap-2 self-start md:self-auto">
+                <i className="fa-solid fa-star text-xs animate-pulse"></i>
+                <span className="text-[9px] font-black uppercase tracking-widest">Guardian Node</span>
+              </div>
+            )}
+            {profile?.isArchived && (
+              <div className="px-6 py-2 bg-amber-500 text-white rounded-xl shadow-lg border border-amber-400 flex items-center gap-2 self-start md:self-auto">
+                <i className="fa-solid fa-box-archive text-xs"></i>
+                <span className="text-[9px] font-black uppercase tracking-widest">Archived Account</span>
+              </div>
+            )}
+          </div>
         </header>
 
         {activeTab === 'home' && (

@@ -73,7 +73,7 @@ export default function AdminDashboard() {
   // Confirmation Modal State
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    type: 'delete_single' | 'delete_all' | 'archive_all' | 'wipe_history' | 'reset_system' | 'archive_single';
+    type: 'delete_single' | 'delete_all' | 'archive_all' | 'wipe_history' | 'reset_system' | 'archive_single' | 'delete_archived';
     title: string;
     message: string;
     requireTyping?: string;
@@ -108,7 +108,7 @@ export default function AdminDashboard() {
       const refreshLive = async () => {
          try {
              // Only fetch attempts for speed
-             const latestAttempts = await storageService.getAttempts();
+             const latestAttempts = await storageService.getAttempts(activeSection === 'live_monitor' && !viewResultsExam);
              setAttempts(latestAttempts);
              setLastRefresh(new Date());
          } catch (e) {
@@ -384,7 +384,8 @@ export default function AdminDashboard() {
   // -- Action Triggers --
   const triggerArchiveAll = () => setConfirmModal({ isOpen: true, type: 'archive_all', title: 'Archive All Exams', message: 'This will hide all active exams.', requireTyping: 'CONFIRM' });
   const triggerWipeHistory = () => setConfirmModal({ isOpen: true, type: 'wipe_history', title: 'Wipe All Results', message: 'Permanently delete ALL student attempts?', requireTyping: 'WIPE' });
-  const triggerDeleteAllExams = () => setConfirmModal({ isOpen: true, type: 'delete_all', title: 'Delete ALL Exams', message: 'Permanently delete EVERY exam and result?', requireTyping: 'DELETE ALL' });
+  const triggerDeleteAllExams = () => setConfirmModal({ isOpen: true, type: 'delete_all', title: 'System Wipe: ALL Exams', message: 'Permanently delete EVERY exam and result? This is IRREVERSIBLE.', requireTyping: 'DELETE EVERYTHING' });
+  const triggerDeleteArchivedExams = () => setConfirmModal({ isOpen: true, type: 'delete_archived', title: 'Delete Archived Data', message: 'Permanently delete all exams in the archived tab and their student results?', requireTyping: 'DELETE ARCHIVE' });
   const triggerFactoryReset = () => setConfirmModal({ isOpen: true, type: 'reset_system', title: 'Factory Reset', message: 'Complete system wipe. Deletes Everything.', requireTyping: 'RESET' });
   const triggerDeleteSingle = (exam: Exam) => {
     const attemptCount = attempts.filter(a => a.examId === exam.id).length;
@@ -400,7 +401,8 @@ export default function AdminDashboard() {
     try {
       if (confirmModal.type === 'archive_all') await storageService.archiveAllExams();
       else if (confirmModal.type === 'wipe_history') { await storageService.clearAllAttempts(); setAttempts([]); }
-      else if (confirmModal.type === 'delete_all') { await storageService.deleteAllExams(); setExams([]); }
+      else if (confirmModal.type === 'delete_all') { await storageService.deleteAllExams(); setExams([]); setAttempts([]); }
+      else if (confirmModal.type === 'delete_archived') { await storageService.deleteArchivedExams(); }
       else if (confirmModal.type === 'reset_system') { await storageService.factoryReset(); window.location.reload(); return; }
       else if (confirmModal.type === 'delete_single' && confirmModal.data) { await storageService.deleteExam(confirmModal.data.id); setExams(prev => prev.filter(e => e.id !== confirmModal.data.id)); }
       else if (confirmModal.type === 'archive_single' && confirmModal.data) { await storageService.archiveExam(confirmModal.data.id); }
@@ -880,8 +882,19 @@ export default function AdminDashboard() {
                            <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-6 pt-4 border-t border-slate-50">
                                 <div className="space-y-2">
                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question Count</label>
-                                   <input type="number" min="1" max="25" value={newExamData.count} onChange={e => setNewExamData({...newExamData, count: parseInt(e.target.value)})} className="elite-input text-center" />
-                                   <p className="text-[9px] font-bold text-emerald-600 mt-1 text-center">Max 25 (Cost Optimization)</p>
+                                   <input 
+                                       type="number" 
+                                       min="1" 
+                                       max="25" 
+                                       value={newExamData.count} 
+                                       onChange={e => {
+                                           let val = parseInt(e.target.value) || 0;
+                                           if (val > 25) val = 25;
+                                           setNewExamData({...newExamData, count: val});
+                                       }} 
+                                       className="elite-input text-center font-bold text-indigo-900" 
+                                   />
+                                   <p className="text-[9px] font-black text-rose-500 mt-1 text-center uppercase tracking-widest">Strict Limit: 25 Max</p>
                                 </div>
                                 <div className="space-y-2">
                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Exam Timer (5-120m)</label>
@@ -891,9 +904,9 @@ export default function AdminDashboard() {
                                            min="5" 
                                            max="120" 
                                            value={newExamData.timer} 
-                                           onChange={e => setNewExamData({...newExamData, timer: parseInt(e.target.value)})} 
+                                           onChange={e => setNewExamData({...newExamData, timer: parseInt(e.target.value) || 0})} 
                                            onBlur={e => {
-                                               let val = parseInt(e.target.value);
+                                               let val = parseInt(e.target.value) || 0;
                                                if (isNaN(val) || val < 5) val = 5;
                                                if (val > 120) val = 120;
                                                setNewExamData({...newExamData, timer: val});
@@ -903,7 +916,7 @@ export default function AdminDashboard() {
                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-400 pointer-events-none">MIN</div>
                                    </div>
                                 </div>
-                                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strike Limit</label><select value={newExamData.strikeLimit} onChange={e => setNewExamData({...newExamData, strikeLimit: parseInt(e.target.value)})} className="elite-input bg-slate-50 text-center"><option value="1">1 Strike</option><option value="3">3 Strikes</option><option value="5">5 Strikes</option></select></div>
+                                <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Strike Limit</label><select value={newExamData.strikeLimit} onChange={e => setNewExamData({...newExamData, strikeLimit: parseInt(e.target.value) || 3})} className="elite-input bg-slate-50 text-center"><option value="1">1 Strike</option><option value="3">3 Strikes</option><option value="5">5 Strikes</option></select></div>
                                 <div className="space-y-2"><label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expiry Date</label><input type="datetime-local" value={customExpiry} onChange={e => setCustomExpiry(e.target.value)} className="elite-input text-xs" /></div>
                            </div>
                         </div>
@@ -974,7 +987,7 @@ export default function AdminDashboard() {
                         {displayedExams.length === 0 && <div className="text-center py-12 text-slate-400 text-xs font-bold uppercase tracking-widest">No exams found.</div>}
                     </div>
                     {historyTab === 'active' && displayedExams.length > 0 && <button onClick={triggerArchiveAll} className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-amber-100 hover:text-amber-600 transition-all">Archive All Active Exams</button>}
-                    {historyTab === 'archived' && displayedExams.length > 0 && <button onClick={triggerDeleteAllExams} className="w-full py-4 bg-red-50 text-red-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all">Delete All Archived</button>}
+                    {historyTab === 'archived' && displayedExams.length > 0 && <button onClick={triggerDeleteArchivedExams} className="w-full py-4 bg-red-50 text-red-400 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all">Delete All Archived</button>}
                 </div>
             )}
 

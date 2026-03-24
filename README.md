@@ -21,6 +21,7 @@ A professional-grade, high-tech assessment platform for teachers and students. B
    ```env
    VITE_SUPABASE_URL=your_project_url
    VITE_SUPABASE_ANON_KEY=your_anon_key
+   VITE_GEMINI_API_KEY=your_gemini_key
    ```
 
 3. **Run Dev Server**:
